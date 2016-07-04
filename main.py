@@ -1,3 +1,4 @@
+# Standard library imports
 import requests
 import json
 import socket
@@ -10,7 +11,7 @@ ip = None
 tokenData = None
 
 
-#Get the credentials from a JSON file
+# Get the credentials from a JSON file
 tokenFile = open("/usr/local/lib/python2.7/dist-packages/PiCom/token.json", 'r')
 tokenData = tokenFile.read()
 tokenFile.close()
@@ -22,116 +23,103 @@ deviceId = tokenData['deviceId']
 ip = tokenData['ip']
 
 
-def getCredentials():
+def get_credentials():
     return tokenData
 
-def storeAPIID(idA):
-    d = {
-        'idA': idA,
-        'key': api_key,
-        'ip': ip,
-        'deviceId': deviceId
-    }
+
+def store_API_id(idA):
+    global api_id
+    tokenData['idA'] = idA
     tokenFile = open('token.json', 'w')
-    tokenFile.write(json.dumps(d))
+    tokenFile.write(json.dumps(tokenData))
     tokenFile.close()
     api_id = idA
 
-def storeAPIKey(key):
-    d = {
-        'idA': api_id,
-        'key': key,
-        'ip': ip,
-        'deviceId': deviceId
-    }
-    print(d)
+
+def storeAPI_key(key):
+    global api_key
+    tokenData['key'] = key
     tokenFile = open('token.json', 'w')
-    tokenFile.write(json.dumps(d))
+    tokenFile.write(json.dumps(tokenData))
     tokenFile.close()
     api_key = key
 
-def storeCredentials(APIId, APIKey):
+
+def store_credentials(APIId, APIKey):
     global api_id
     global api_key
-    d = {
-        'idA': APIId,
-        'key': APIKey,
-        'ip': ip,
-        'deviceId': deviceId
-    }
+    tokenData['idA'] = APIId
+    tokenData['key'] = api_key
     tokenFile = open('token.json', 'w')
-    tokenFile.write(json.dumps(d))
+    tokenFile.write(json.dumps(tokenData))
     tokenFile.close()
     api_key = APIKey
     api_id = APIId
 
-def storeID(idD):
-    d = {
-        'idA': api_id,
-        'key': api_key,
-        'ip': ip,
-        'deviceId': idD
-    }
+
+def store_id(idD):
+    global deviceId
+    tokenData['deviceId'] = idD
     tokenFile = open('token.json', 'w')
-    tokenFile.write(json.dumps(d))
+    tokenFile.write(json.dumps(tokenData))
     tokenFile.close()
     deviceId = idD
 
-def storeIP(ipD):
-    d = {
-        'idA': idA,
-        'key': api_key,
-        'ip': ipD,
-        'deviceId': deviceId
-    }
+
+def store_ip(ipD):
+    global ip
+    tokenData['ip'] = ipD
     tokenFile = open('token.json', 'w')
-    tokenFile.write(json.dumps(d))
+    tokenFile.write(json.dumps(tokenData))
     tokenFile.close()
     ip = ipD
 
-def storeAll(idG, key, ipD, dID):
-    d = {
-        'idA': idG,
-        'key': key,
-        'ip': ipD,
-        'deviceId': dID
-    }
+
+def store_all(idG, key, ipD, dID):
+    global api_id, api_key, ip, deviceId
+    tokenData['idA'] = idG
+    tokenData['key'] = key
+    tokenData['ip'] = ipD
+    tokenData['deviceId'] = dID
     tokenFile = open('token.json', 'w')
-    tokenFile.write(json.dumps(d))
+    tokenFile.write(json.dumps(tokenData))
     tokenFile.close()
     api_id = idG
     api_key = key
     ip = ipD
     deviceId = dID
 
-def renewCredentials():
-    headers = {'Device-Id': api_id, 'Device-Key': api_key}
-    r = requests.post("http://" + ip + "/api/v1/device/gen_token/" + str(deviceId), headers=headers)
-    res = r.json()
-    print(res)
-    storeCredentials(res['token_id'], res['token_key'])
 
-def testConnection():
+def renew_credentials():
     headers = {'Device-Id': api_id, 'Device-Key': api_key}
-    print(ip)
-    r = requests.get("http://" + str(ip) + "/api/v1/ping", headers=headers)
+    r = requests.post("http://" + ip + "/api/v1/device/gen_token/{}".format(deviceId), headers=headers)
+    res = r.json()
+    store_credentials(res['token_id'], res['token_key'])
+
+
+def test_connection():
+    headers = {'Device-Id': api_id, 'Device-Key': api_key}
+    r = requests.get("http://{}/api/v1/ping".format(ip), headers=headers)
     if "Pong" in r.text:
         return True
     else:
         return r.text
 
-def getApifree():
+
+def get_api_free():
     headers = {'Device-Id': api_id, 'Device-Key': api_key}
     r = requests.get("http://" + ip + "/api/v1/apifrees", headers=headers)
     return r.json()
 
-def updateGarageState(garageId, state):
+
+def update_garage_state(garage, state):
     headers = {'Device-Id': api_id, 'Device-Key': api_key}
-    payload = { "state": state}
-    r = requests.post("http://" + ip + "/api/v1/garage/" + str(garageId), data=payload, headers=headers)
+    payload = {"state": state}
+    r = requests.post("http://{ip}/api/v1/garage/{garage_id}".format(ip=ip, garage_id=garage),
+                      data=payload, headers=headers)
     return r.status_code
 
-def sendAlarmSignal():
+def send_alarm_signal():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((ip, 5402))
     s.send((api_id + "*" + api_key + "*alarm/").encode())
