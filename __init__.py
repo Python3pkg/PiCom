@@ -6,3 +6,7 @@ from main import storeAPIID
 from main import storeAPIKey
 from main import storeID
 from main import testConnection
+from main import storeID
+from main import storeAll
+from main import updateGarageState
+from main import sendAlarmSignal
