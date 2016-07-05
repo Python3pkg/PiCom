@@ -2,6 +2,7 @@
 import requests
 import json
 import socket
+import os
 
 api_id = None
 api_key = None
@@ -9,13 +10,24 @@ deviceId = None
 ip = None
 
 tokenData = None
-
+BASE_JSON_STRUCTURE = """{
+    "idA" :"",
+    "key": "",
+    "deviceId": "",
+    "ip":""
+}"""
 
 # Get the credentials from a JSON file
-tokenFile = open("/usr/local/lib/python2.7/dist-packages/PiCom/token.json", 'r')
-tokenData = tokenFile.read()
-tokenFile.close()
-tokenData = json.loads(tokenData)
+try:
+    tokenFile = open("token.json", 'r')
+    tokenData = tokenFile.read()
+    tokenFile.close()
+    tokenData = json.loads(tokenData)
+except FileNotFoundError:
+    tokenFile = open("token.json", "w")
+    tokenFile.write(BASE_JSON_STRUCTURE)
+    tokenData = json.loads(BASE_JSON_STRUCTURE)
+    tokenFile.close()
 
 api_id = tokenData['idA']
 api_key = tokenData['key']
@@ -119,8 +131,17 @@ def update_garage_state(garage, state):
                       data=payload, headers=headers)
     return r.status_code
 
+
+def get_garages():
+    headers = {'Device-Id': api_id, 'Device-Key': api_key}
+    r = requests.get("http://{ip}/api/v1/garages".format(ip=ip), headers=headers)
+    try:
+        return r.json()
+    except json.decoder.JSONDecodeError:
+        return "{} // {}".format(r.status_code, r.text)
+
 def send_alarm_signal():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((ip, 5402))
-    s.send((api_id + "*" + api_key + "*alarm/").encode())
+    s.send(("{api_id}*{api_key}*alarm/".format(api_id=api_id, api_key=api_key)).encode())
 
